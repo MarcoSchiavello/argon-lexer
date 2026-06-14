@@ -9,7 +9,7 @@
 
 int main() {
     auto collectedToken = std::vector<std::shared_ptr<Token>>();
-    const auto lexer = std::make_unique<Lexer>("34321315+41231233+23131312+21313++");
+    const auto lexer = std::make_unique<Lexer>("34321315+   \n 41231233+23131312+21313++");
     lexer->addTokenGenerator(std::make_shared<IntTokenGenerator>());
     lexer->addTokenGenerator(std::make_shared<AdditionTokenGenerator>());
 

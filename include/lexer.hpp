@@ -27,6 +27,9 @@ class Lexer {
         std::string m_text;
         std::string::iterator m_iterator;
         std::set<std::shared_ptr<ITokenGenerator>, TokenGeneratorByType> m_tokenGens;
+        char m_peek;
 
         void skipFiller();
+        void advance(std::string&);
+        bool isFinished();
 };

@@ -4,6 +4,7 @@ Lexer::Lexer(const std::string& text) {
     m_lineNumber = 0;
     m_text = text;
     m_iterator = m_text.begin();
+    m_peek = *m_iterator;
 }
 
 void Lexer::skipFiller() {
@@ -14,6 +15,18 @@ void Lexer::skipFiller() {
 
         ++m_iterator;
     }
+
+    m_peek = *m_iterator;
+}
+
+void Lexer::advance(std::string& payload) {
+    payload += m_peek;
+    ++m_iterator;
+    m_peek = *m_iterator;
+}
+
+bool Lexer::isFinished() {
+    return m_iterator == m_text.end();
 }
 
 void Lexer::addTokenGenerator(std::shared_ptr<ITokenGenerator> gen) {
@@ -21,42 +34,38 @@ void Lexer::addTokenGenerator(std::shared_ptr<ITokenGenerator> gen) {
 }
 
 std::shared_ptr<Token> Lexer::lexToken() {
-    if (m_iterator == m_text.end()) {
+    if (isFinished()) {
         return nullptr;
     }
 
     skipFiller();
 
-    auto gens = m_tokenGens;
-    gens.clear();
-    std::string payload;
+    auto candidates = m_tokenGens;
     bool validSeq;
+    std::string payload;
     std::shared_ptr<ITokenGenerator> lastFailedGen = nullptr;
-    std::shared_ptr<Token> token = nullptr;
 
     do {
         validSeq = false;
-        const char peek = *m_iterator;
+        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
+            auto& gen = *gen_itr;
 
-        for (const auto& gen : m_tokenGens) {
-            if (gens.contains(gen)) {
-                continue;
-            }
-
-            if (gen->check(payload + peek)) {
+            if (gen->check(payload + m_peek)) {
                 validSeq = true;
-                payload += peek;
-                ++m_iterator;
+                advance(payload);
 
-                if (m_iterator != m_text.end()) {
+                // If next character is the end of content, then flag it as failed gen so it
+                // will close the sequence and selected to generate the token
+                if (!isFinished()) {
+                    ++gen_itr;
                     continue;
                 }
             }
 
-            lastFailedGen = gen;
-            gens.insert(gen);
+            lastFailedGen = *gen_itr;
+            gen_itr = candidates.erase(gen_itr);
         }
-    } while(validSeq && m_iterator != m_text.end());
+    } while(validSeq && !isFinished());
 
     return lastFailedGen->generate(payload);
 }
