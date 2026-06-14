@@ -1,5 +1,5 @@
 <p align="center">
-    <img  src=".github/imgs/argon-logo-dark.svg" alt="Argon element tile" height="150">
+    <img  src=".github/imgs/argon-logo-dark.svg" alt="Argon element tile" height="200">
 </p>
 <br/>
 Argon is a modular C++23 lexer that tokenizes source input through pluggable, per-token generators for easy extension.
