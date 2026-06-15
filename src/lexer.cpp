@@ -1,5 +1,7 @@
 #include "lexer.hpp"
 
+#include <typeinfo>
+
 Lexer::Lexer(const std::string& text) {
     m_lineNumber = 0;
     m_text = text;
@@ -29,26 +31,43 @@ bool Lexer::isFinished() {
     return m_iterator == m_text.end();
 }
 
-void Lexer::addTokenGenerator(std::shared_ptr<ITokenGenerator> gen) {
-    m_tokenGens.emplace(std::move(gen));
+std::set<ITokenGenerator*> Lexer::prepareCandidates() const {
+    auto candidates = std::set<ITokenGenerator*>();
+    for (const auto& gen : m_tokenGens) {
+        candidates.insert(gen.get());
+    }
+    return candidates;
 }
 
-std::shared_ptr<Token> Lexer::lexToken() {
+Lexer& Lexer::addTokenGenerator(std::unique_ptr<ITokenGenerator> gen) {
+    const ITokenGenerator& candidate = *gen;
+    for (const auto& existing : m_tokenGens) {
+        if (const ITokenGenerator& registered = *existing;
+                typeid(registered) == typeid(candidate)) {
+            return *this;  // a generator of this concrete type is already registered
+        }
+    }
+
+    m_tokenGens.emplace(std::move(gen));
+    return *this;
+}
+
+std::unique_ptr<Token> Lexer::lexToken() {
     if (isFinished()) {
         return nullptr;
     }
 
     skipFiller();
 
-    auto candidates = m_tokenGens;
+    auto candidates = prepareCandidates();
     bool validSeq;
     std::string payload;
-    std::shared_ptr<ITokenGenerator> lastFailedGen = nullptr;
+    const ITokenGenerator* lastFailedGen = nullptr;
 
     do {
         validSeq = false;
         for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
-            const auto gen = *gen_itr;
+            const auto& gen = *gen_itr;
 
             if (gen->check(m_peek, payload)) {
                 validSeq = true;
@@ -67,5 +86,8 @@ std::shared_ptr<Token> Lexer::lexToken() {
         }
     } while(validSeq && !isFinished());
 
+    if (lastFailedGen == nullptr) {
+        throw std::logic_error("Lexer::addTokenGenerator: Unexpected token at line " + std::to_string(m_lineNumber));
+    }
     return lastFailedGen->generate(payload);
 }
