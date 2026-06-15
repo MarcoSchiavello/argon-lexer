@@ -66,19 +66,19 @@ std::unique_ptr<Token> Lexer::lexToken() {
 
     do {
         validSeq = false;
-        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
+        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end() && !isFinished();) {
             const auto& gen = *gen_itr;
 
             if (gen->check(m_peek, payload)) {
                 validSeq = true;
                 advance(payload);
 
-                // If next character is the end of content, then flag it as failed gen so it
-                // will close the sequence and selected to generate the token
-                if (!isFinished()) {
+                if (isFinished()) {
+                    lastFailedGen = *gen_itr;
+                } else {
                     ++gen_itr;
-                    continue;
                 }
+                continue;
             }
 
             lastFailedGen = *gen_itr;
@@ -86,7 +86,7 @@ std::unique_ptr<Token> Lexer::lexToken() {
         }
     } while(validSeq && !isFinished());
 
-    if (lastFailedGen == nullptr) {
+    if (lastFailedGen == nullptr || payload.empty()) {
         throw std::logic_error("Lexer::addTokenGenerator: Unexpected token at line " + std::to_string(m_lineNumber));
     }
     return lastFailedGen->generate(payload);
