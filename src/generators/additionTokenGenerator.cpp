@@ -1,10 +1,10 @@
 #include "additionTokenGenerator.hpp"
 
-bool AdditionTokenGenerator::check(const std::string& payload) const {
-    return payload == "+";
+bool AdditionTokenGenerator::check(const char peek, const std::string& payload) const {
+    return peek + payload == "+";
 }
 
-std::shared_ptr<Token> AdditionTokenGenerator::generate(const std::string& payload) const {
-    return std::make_shared<Token>(ADDITION, payload);
+std::unique_ptr<Token> AdditionTokenGenerator::generate(const std::string& payload) const {
+    return std::make_unique<Token>(ADDITION, payload);
 }
 

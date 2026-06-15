@@ -8,6 +8,6 @@
 class IntTokenGenerator : public ITokenGenerator {
     public:
         ~IntTokenGenerator() override = default;
-        [[nodiscard]]  bool check(const std::string& payload) const override;
-        [[nodiscard]]  std::shared_ptr<Token> generate(const std::string& payload) const override;
+        [[nodiscard]]  bool check(char peek, const std::string& payload) const override;
+        [[nodiscard]]  std::unique_ptr<Token> generate(const std::string& payload) const override;
 };
