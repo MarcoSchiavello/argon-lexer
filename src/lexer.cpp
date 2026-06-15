@@ -48,9 +48,9 @@ std::shared_ptr<Token> Lexer::lexToken() {
     do {
         validSeq = false;
         for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
-            auto& gen = *gen_itr;
+            const auto gen = *gen_itr;
 
-            if (gen->check(payload + m_peek)) {
+            if (gen->check(m_peek, payload)) {
                 validSeq = true;
                 advance(payload);
 

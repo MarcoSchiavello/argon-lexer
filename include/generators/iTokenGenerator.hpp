@@ -6,7 +6,7 @@
 class ITokenGenerator {
     public:
         virtual ~ITokenGenerator() = default;
-        [[nodiscard]] virtual bool check(const std::string& payload) const = 0;
+        [[nodiscard]] virtual bool check(char peek, const std::string& payload) const = 0;
         [[nodiscard]] virtual std::shared_ptr<Token> generate(const std::string& payload) const = 0;
 };
 
