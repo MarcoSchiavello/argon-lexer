@@ -7,16 +7,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(argon
         main.cpp
         src/lexer.cpp
-        src/generators/additionTokenGenerator.cpp
-        src/generators/IntTokenGenerator.cpp
         src/utils.cpp
+        src/generators/IntTokenGenerator.cpp
+        src/generators/additionTokenGenerator.cpp
         src/generators/divisionTokenGenerator.cpp
+        src/commentState/noCommentState.cpp
+        src/commentState/initCommentState.cpp
+        src/commentState/mlCommentState.cpp
+        src/commentState/lineCommentState.cpp
+        src/commentState/endMlCommentState.cpp
 )
 
 target_include_directories(argon PRIVATE
         include
         include/tokens
         include/generators
+        include/commentState
 )
 
 target_compile_options(argon PRIVATE -Wall -Wextra)

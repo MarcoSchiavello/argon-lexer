@@ -7,24 +7,30 @@ Lexer::Lexer(const std::string& text) {
     m_text = text;
     m_iterator = m_text.begin();
     m_peek = *m_iterator;
+    m_commentState = std::unique_ptr<NoCommentState>();
 }
 
 void Lexer::skipFiller() {
-    while  (*m_iterator == ' ' || *m_iterator == '\n') {
-        if (*m_iterator == '\n') {
+    while  (m_peek == ' ' || m_peek == '\n' || m_commentState->isSkippable()) {
+        if (m_peek == '\n') {
             m_lineNumber++;
         }
 
-        ++m_iterator;
+        advance();
     }
-
-    m_peek = *m_iterator;
 }
 
 void Lexer::advance(std::string& payload) {
     payload += m_peek;
+    advance();
+}
+
+void Lexer::advance() {
     ++m_iterator;
     m_peek = *m_iterator;
+    if (auto newState = m_commentState->update(m_peek)) {
+        m_commentState = std::move(newState);
+    }
 }
 
 bool Lexer::isFinished() {
