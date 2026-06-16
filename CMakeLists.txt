@@ -10,6 +10,7 @@ add_executable(argon
         src/generators/additionTokenGenerator.cpp
         src/generators/IntTokenGenerator.cpp
         src/utils.cpp
+        src/generators/divisionTokenGenerator.cpp
 )
 
 target_include_directories(argon PRIVATE
