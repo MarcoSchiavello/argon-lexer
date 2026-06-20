@@ -17,15 +17,18 @@ class Lexer {
 
     private:
         int m_lineNumber;
+        char m_peek;
+        int m_iteratorLookAhead;
+        bool m_closeToken;
         std::string m_text;
         std::string::iterator m_iterator;
         std::set<std::unique_ptr<ITokenGenerator>> m_tokenGens;
-        char m_peek;
         std::unique_ptr<ICommentState> m_commentState;
 
         void skipFiller();
         void advance(std::string&);
         void advance();
+        void commit();
         bool isFinished();
         [[nodiscard]] std::set<ITokenGenerator*> prepareCandidates() const;
 };

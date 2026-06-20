@@ -7,7 +7,7 @@ Lexer::Lexer(const std::string& text) {
     m_text = text;
     m_iterator = m_text.begin();
     m_peek = *m_iterator;
-    m_commentState = std::unique_ptr<NoCommentState>();
+    m_commentState = std::make_unique<NoCommentState>();
 }
 
 void Lexer::skipFiller() {
@@ -26,11 +26,19 @@ void Lexer::advance(std::string& payload) {
 }
 
 void Lexer::advance() {
-    ++m_iterator;
-    m_peek = *m_iterator;
+    m_iteratorLookAhead++;
+    m_peek = *(m_iterator+m_iteratorLookAhead);
+
     if (auto newState = m_commentState->update(m_peek)) {
         m_commentState = std::move(newState);
     }
+
+    m_closeToken = m_commentState->isSkippable();
+}
+
+void Lexer::commit() {
+    m_iterator += m_iteratorLookAhead;
+    m_iteratorLookAhead = 0;
 }
 
 bool Lexer::isFinished() {
@@ -63,37 +71,49 @@ std::unique_ptr<Token> Lexer::lexToken() {
         return nullptr;
     }
 
+    m_iteratorLookAhead = 0;
+
     skipFiller();
 
     auto candidates = prepareCandidates();
     bool validSeq;
     std::string payload;
-    const ITokenGenerator* lastFailedGen = nullptr;
+    struct {
+        ITokenGenerator* gen;
+        size_t len;
+    } lastAccepted = { nullptr, 0 };
 
     do {
         validSeq = false;
-        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end() && !isFinished();) {
+        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
             const auto& gen = *gen_itr;
 
             if (gen->check(m_peek, payload)) {
                 validSeq = true;
-                advance(payload);
-
-                if (isFinished()) {
-                    lastFailedGen = *gen_itr;
-                } else {
-                    ++gen_itr;
-                }
+                ++gen_itr;
                 continue;
             }
 
-            lastFailedGen = *gen_itr;
+            if (gen->accept(payload)) {
+                lastAccepted.gen = gen;
+                lastAccepted.len = payload.length();
+                commit();
+            }
+
             gen_itr = candidates.erase(gen_itr);
         }
-    } while(validSeq && !isFinished());
 
-    if (lastFailedGen == nullptr || payload.empty()) {
-        throw std::logic_error("Lexer::addTokenGenerator: Unexpected token at line " + std::to_string(m_lineNumber));
+        if (validSeq) {
+            advance(payload);
+        }
+    } while(validSeq && !m_closeToken);
+
+    if (m_commentState->isSkippable() && payload=="/") {
+        return lexToken();
     }
-    return lastFailedGen->generate(payload);
+
+    if (lastAccepted.gen == nullptr) {
+        throw std::logic_error("Lexer::addTokenGenerator: Unexpected token '"+payload+"' at line " + std::to_string(m_lineNumber));
+    }
+    return lastAccepted.gen->generate(payload.substr(0, lastAccepted.len));
 }

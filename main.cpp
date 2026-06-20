@@ -10,7 +10,7 @@
 
 int main() {
     auto collectedToken = std::vector<std::unique_ptr<Token>>();
-    const auto lexer = std::make_unique<Lexer>("3432131//5+  \n 41231233+23131312+21313++");
+    const auto lexer = std::make_unique<Lexer>("3432131//5+  41231/233+23131312+21313++");
     lexer->addTokenGenerator(std::make_unique<IntTokenGenerator>())
           .addTokenGenerator(std::make_unique<AdditionTokenGenerator>())
           .addTokenGenerator(std::make_unique<DivisionTokenGenerator>());

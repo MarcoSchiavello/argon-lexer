@@ -4,7 +4,11 @@ bool DivisionTokenGenerator::check(const char peek, const std::string& payload) 
     return peek + payload == "/";
 }
 
+bool DivisionTokenGenerator::accept(const std::string& payload) const {
+    return payload.size() == 1 && payload.at(0) == '/';
+}
+
 std::unique_ptr<Token> DivisionTokenGenerator::generate(const std::string& payload) const {
-    return std::make_unique<Token>(ADDITION, payload);
+    return std::make_unique<Token>(DIVISION, payload);
 }
 
