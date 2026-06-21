@@ -7,4 +7,5 @@ class MLCommentState : public ICommentState {
         ~MLCommentState() override = default;
         [[nodiscard]] std::unique_ptr<ICommentState> update(char peek) const override;
         [[nodiscard]] bool isSkippable() const override;
+        [[nodiscard]] bool mustCloseBeforeEnd() const override;
 };

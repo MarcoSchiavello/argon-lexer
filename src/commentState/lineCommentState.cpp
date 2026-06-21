@@ -12,3 +12,7 @@ std::unique_ptr<ICommentState> LineCommentState::update(const char peek) const {
 bool LineCommentState::isSkippable() const {
     return true;
 }
+
+bool LineCommentState::mustCloseBeforeEnd() const {
+    return false;
+}

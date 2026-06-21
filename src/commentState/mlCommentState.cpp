@@ -11,3 +11,7 @@ std::unique_ptr<ICommentState> MLCommentState::update(const char peek) const {
 bool MLCommentState::isSkippable() const {
     return true;
 }
+
+bool MLCommentState::mustCloseBeforeEnd() const {
+    return true;
+}

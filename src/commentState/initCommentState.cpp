@@ -15,3 +15,7 @@ std::unique_ptr<ICommentState> InitCommentState::update(const char peek) const {
 bool InitCommentState::isSkippable() const {
     return false;
 }
+
+bool InitCommentState::mustCloseBeforeEnd() const {
+    return false;
+}

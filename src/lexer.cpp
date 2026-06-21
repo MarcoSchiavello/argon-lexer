@@ -12,6 +12,11 @@ Lexer::Lexer(const std::string& text) {
 
 void Lexer::skipFiller() {
     while  (m_peek == ' ' || m_peek == '\n' || m_commentState->isSkippable()) {
+        if (isFinished()) {
+            if (m_closeToken )
+            return;
+        }
+
         if (m_peek == '\n') {
             m_lineNumber++;
         }
@@ -42,7 +47,7 @@ void Lexer::commit() {
 }
 
 bool Lexer::isFinished() {
-    return m_iterator == m_text.end();
+    return m_iterator+m_iteratorLookAhead == m_text.end();
 }
 
 std::set<ITokenGenerator*> Lexer::prepareCandidates() const {
@@ -67,13 +72,15 @@ Lexer& Lexer::addTokenGenerator(std::unique_ptr<ITokenGenerator> gen) {
 }
 
 std::unique_ptr<Token> Lexer::lexToken() {
+    m_iteratorLookAhead = 0;
+    skipFiller();
+
     if (isFinished()) {
+        if (m_commentState->mustCloseBeforeEnd()) {
+            throw std::logic_error("Lexer::addTokenGenerator: Illegal comment state on document's end");
+        }
         return nullptr;
     }
-
-    m_iteratorLookAhead = 0;
-
-    skipFiller();
 
     auto candidates = prepareCandidates();
     bool validSeq;

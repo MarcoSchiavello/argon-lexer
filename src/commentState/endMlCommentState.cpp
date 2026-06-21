@@ -5,9 +5,13 @@ std::unique_ptr<ICommentState> EndMLCommentState::update(const char peek) const 
         return std::make_unique<NoCommentState>();
     }
 
-    return nullptr;
+    return std::make_unique<MLCommentState>();
 }
 
 bool EndMLCommentState::isSkippable() const {
+    return true;
+}
+
+bool EndMLCommentState::mustCloseBeforeEnd() const {
     return true;
 }
