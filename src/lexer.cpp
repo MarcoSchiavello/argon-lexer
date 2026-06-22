@@ -7,16 +7,13 @@ Lexer::Lexer(const std::string& text) {
     m_text = text;
     m_iterator = m_text.begin();
     m_peek = *m_iterator;
-    m_commentState = std::make_unique<NoCommentState>();
+    m_commentState = &NoCommentState::getInstance().update(m_peek);
+    m_iteratorLookAhead = 0;
+    m_closeToken = false;
 }
 
 void Lexer::skipFiller() {
-    while  (m_peek == ' ' || m_peek == '\n' || m_commentState->isSkippable()) {
-        if (isFinished()) {
-            if (m_closeToken )
-            return;
-        }
-
+    while  (!isFinished() && (m_peek == ' ' || m_peek == '\n' || m_commentState->isSkippable())) {
         if (m_peek == '\n') {
             m_lineNumber++;
         }
@@ -33,11 +30,7 @@ void Lexer::advance(std::string& payload) {
 void Lexer::advance() {
     m_iteratorLookAhead++;
     m_peek = *(m_iterator+m_iteratorLookAhead);
-
-    if (auto newState = m_commentState->update(m_peek)) {
-        m_commentState = std::move(newState);
-    }
-
+    m_commentState = &m_commentState->update(m_peek);
     m_closeToken = m_commentState->isSkippable();
 }
 

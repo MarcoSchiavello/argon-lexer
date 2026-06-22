@@ -1,11 +1,16 @@
 #include "mlCommentState.hpp"
 
-std::unique_ptr<ICommentState> MLCommentState::update(const char peek) const {
+const MLCommentState& MLCommentState::getInstance() {
+    static MLCommentState instance;
+    return instance;
+}
+
+const ICommentState& MLCommentState::update(const char peek) const {
     if (peek == '*') {
-        return std::make_unique<EndMLCommentState>();
+        return EndMLCommentState::getInstance();
     }
 
-    return nullptr;
+    return *this;
 }
 
 bool MLCommentState::isSkippable() const {

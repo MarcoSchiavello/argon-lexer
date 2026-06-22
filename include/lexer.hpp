@@ -23,7 +23,7 @@ class Lexer {
         std::string m_text;
         std::string::iterator m_iterator;
         std::set<std::unique_ptr<ITokenGenerator>> m_tokenGens;
-        std::unique_ptr<ICommentState> m_commentState;
+        const ICommentState* m_commentState;
 
         void skipFiller();
         void advance(std::string&);

@@ -1,11 +1,22 @@
 #include "endMlCommentState.hpp"
+#include "mlCommentState.hpp"
 
-std::unique_ptr<ICommentState> EndMLCommentState::update(const char peek) const {
+
+const EndMLCommentState& EndMLCommentState::getInstance() {
+    static EndMLCommentState instance;
+    return instance;
+}
+
+const ICommentState& EndMLCommentState::update(const char peek) const {
     if (peek == '/') {
-        return std::make_unique<NoCommentState>();
+        return NoCommentState::getInstance();
     }
 
-    return std::make_unique<MLCommentState>();
+    if (peek == '*') {
+        return *this;
+    }
+
+    return MLCommentState::getInstance();
 }
 
 bool EndMLCommentState::isSkippable() const {
@@ -15,3 +26,4 @@ bool EndMLCommentState::isSkippable() const {
 bool EndMLCommentState::mustCloseBeforeEnd() const {
     return true;
 }
+

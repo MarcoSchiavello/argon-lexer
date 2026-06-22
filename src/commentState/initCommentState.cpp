@@ -1,15 +1,20 @@
 #include "initCommentState.hpp"
 
-std::unique_ptr<ICommentState> InitCommentState::update(const char peek) const {
+const InitCommentState& InitCommentState::getInstance() {
+    static InitCommentState instance;
+    return instance;
+}
+
+const ICommentState& InitCommentState::update(const char peek) const {
     if (peek == '/') {
-        return std::make_unique<LineCommentState>();
+        return LineCommentState::getInstance();
     }
 
     if (peek == '*') {
-        return std::make_unique<MLCommentState>();
+        return MLCommentState::getInstance();
     }
 
-    return std::make_unique<NoCommentState>();
+    return NoCommentState::getInstance();
 }
 
 bool InitCommentState::isSkippable() const {

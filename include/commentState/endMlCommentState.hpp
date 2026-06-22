@@ -5,7 +5,14 @@
 class EndMLCommentState : public ICommentState {
     public:
         ~EndMLCommentState() override = default;
-        [[nodiscard]] std::unique_ptr<ICommentState> update(char peek) const override;
+        EndMLCommentState(const EndMLCommentState&) = delete;
+        EndMLCommentState& operator=(const EndMLCommentState&) = delete;
+
+        [[nodiscard]] const ICommentState& update(char peek) const override;
         [[nodiscard]] bool isSkippable() const override;
         [[nodiscard]] bool mustCloseBeforeEnd() const override;
+        static const EndMLCommentState& getInstance();
+
+    private:
+        EndMLCommentState() = default;
 };

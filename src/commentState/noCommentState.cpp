@@ -1,11 +1,16 @@
 #include "noCommentState.hpp"
 
-std::unique_ptr<ICommentState> NoCommentState::update(const char peek) const {
+const NoCommentState& NoCommentState::getInstance() {
+    static NoCommentState instance;
+    return instance;
+}
+
+const ICommentState& NoCommentState::update(const char peek) const {
     if (peek == '/') {
-        return std::make_unique<InitCommentState>();
+        return InitCommentState::getInstance();
     }
 
-    return nullptr;
+    return *this;
 }
 
 bool NoCommentState::isSkippable() const {

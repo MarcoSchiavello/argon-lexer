@@ -6,7 +6,14 @@
 class NoCommentState : public ICommentState {
     public:
         ~NoCommentState() override = default;
-        [[nodiscard]] std::unique_ptr<ICommentState> update(char peek) const override;
+        NoCommentState(const NoCommentState&) = delete;
+        NoCommentState& operator=(const NoCommentState&) = delete;
+
+        [[nodiscard]] const ICommentState& update(char peek) const override;
         [[nodiscard]] bool isSkippable() const override;
         [[nodiscard]] bool mustCloseBeforeEnd() const override;
+        static const NoCommentState& getInstance();
+
+    private:
+        NoCommentState() = default;
 };

@@ -1,11 +1,16 @@
 #include "lineCommentState.hpp"
 
-std::unique_ptr<ICommentState> LineCommentState::update(const char peek) const {
+const LineCommentState& LineCommentState::getInstance() {
+    static LineCommentState instance;
+    return instance;
+}
+
+const ICommentState& LineCommentState::update(const char peek) const {
     if (peek == '\n') {
-        return std::make_unique<NoCommentState>();
+        return NoCommentState::getInstance();
     }
 
-    return nullptr;
+    return *this;
 }
 
 
