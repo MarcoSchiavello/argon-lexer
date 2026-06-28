@@ -28,6 +28,15 @@ void Lexer::advance(std::string& payload) {
 }
 
 void Lexer::advance() {
+    // Doing look ahead in order to chase the longest valid seq
+    // without moving the real iterator into a not valid seq that is not accepted by anyone
+    //      e.g. gens = { cia, ciao, ciociao } text = ciaocia
+    //      if the iterator moves in chase of the longest valid seq we would have payload "ciaocia"
+    //      to chase "ciaociao"'s generator but the current payload is not an accepted seq
+    //      despite "ciao" and "cia" being two valid token
+    //      with look ahead we have now that even thou payload "ciaocia" failed, the last accepted seq
+    //      is "ciao" returning the token CIAO, and the iterator will then try to lex from the last commited
+    //      point that is after "ciao" that will allow to lex correctly the token "cia"
     m_iteratorLookAhead++;
     m_peek = *(m_iterator+m_iteratorLookAhead);
     m_commentState = &m_commentState->update(m_peek);
@@ -109,6 +118,7 @@ std::unique_ptr<Token> Lexer::lexToken() {
     } while(validSeq && !m_closeToken);
 
     if (m_commentState->isSkippable() && payload=="/") {
+        commit();
         return lexToken();
     }
 

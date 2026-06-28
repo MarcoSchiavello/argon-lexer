@@ -1,5 +1,6 @@
 #include "endMlCommentState.hpp"
 #include "mlCommentState.hpp"
+#include "skipCharCommentState.hpp"
 
 
 const EndMLCommentState& EndMLCommentState::getInstance() {
@@ -9,7 +10,7 @@ const EndMLCommentState& EndMLCommentState::getInstance() {
 
 const ICommentState& EndMLCommentState::update(const char peek) const {
     if (peek == '/') {
-        return NoCommentState::getInstance();
+        return SkipCharCommentState::getInstance();
     }
 
     if (peek == '*') {
