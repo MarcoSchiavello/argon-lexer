@@ -7,28 +7,49 @@ Lexer::Lexer(const std::string& text) {
     m_text = text;
     m_iterator = m_text.begin();
     m_peek = *m_iterator;
+    m_commentState = &NoCommentState::getInstance().update(m_peek);
+    m_iteratorLookAhead = 0;
+    m_closeToken = false;
 }
 
 void Lexer::skipFiller() {
-    while  (*m_iterator == ' ' || *m_iterator == '\n') {
-        if (*m_iterator == '\n') {
+    while  (!isFinished() && (m_peek == ' ' || m_peek == '\n' || m_commentState->isSkippable())) {
+        if (m_peek == '\n') {
             m_lineNumber++;
         }
 
-        ++m_iterator;
+        advance();
     }
-
-    m_peek = *m_iterator;
 }
 
 void Lexer::advance(std::string& payload) {
     payload += m_peek;
-    ++m_iterator;
-    m_peek = *m_iterator;
+    advance();
+}
+
+void Lexer::advance() {
+    // Doing look ahead in order to chase the longest valid seq
+    // without moving the real iterator into a not valid seq that is not accepted by anyone
+    //      e.g. gens = { cia, ciao, ciociao } text = ciaocia
+    //      if the iterator moves in chase of the longest valid seq we would have payload "ciaocia"
+    //      to chase "ciaociao"'s generator but the current payload is not an accepted seq
+    //      despite "ciao" and "cia" being two valid token
+    //      with look ahead we have now that even thou payload "ciaocia" failed, the last accepted seq
+    //      is "ciao" returning the token CIAO, and the iterator will then try to lex from the last commited
+    //      point that is after "ciao" that will allow to lex correctly the token "cia"
+    m_iteratorLookAhead++;
+    m_peek = *(m_iterator+m_iteratorLookAhead);
+    m_commentState = &m_commentState->update(m_peek);
+    m_closeToken = m_commentState->isSkippable();
+}
+
+void Lexer::commit() {
+    m_iterator += m_iteratorLookAhead;
+    m_iteratorLookAhead = 0;
 }
 
 bool Lexer::isFinished() {
-    return m_iterator == m_text.end();
+    return m_iterator+m_iteratorLookAhead == m_text.end();
 }
 
 std::set<ITokenGenerator*> Lexer::prepareCandidates() const {
@@ -53,41 +74,56 @@ Lexer& Lexer::addTokenGenerator(std::unique_ptr<ITokenGenerator> gen) {
 }
 
 std::unique_ptr<Token> Lexer::lexToken() {
+    m_iteratorLookAhead = 0;
+    skipFiller();
+
     if (isFinished()) {
+        if (m_commentState->mustCloseBeforeEnd()) {
+            throw std::logic_error("Lexer::addTokenGenerator: Illegal comment state on document's end");
+        }
         return nullptr;
     }
-
-    skipFiller();
 
     auto candidates = prepareCandidates();
     bool validSeq;
     std::string payload;
-    const ITokenGenerator* lastFailedGen = nullptr;
+    struct {
+        ITokenGenerator* gen;
+        size_t len;
+    } lastAccepted = { nullptr, 0 };
 
     do {
         validSeq = false;
-        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end() && !isFinished();) {
+        for (auto gen_itr = candidates.begin(); gen_itr != candidates.end();) {
             const auto& gen = *gen_itr;
 
             if (gen->check(m_peek, payload)) {
                 validSeq = true;
-                advance(payload);
-
-                if (isFinished()) {
-                    lastFailedGen = *gen_itr;
-                } else {
-                    ++gen_itr;
-                }
+                ++gen_itr;
                 continue;
             }
 
-            lastFailedGen = *gen_itr;
+            if (gen->accept(payload)) {
+                lastAccepted.gen = gen;
+                lastAccepted.len = payload.length();
+                commit();
+            }
+
             gen_itr = candidates.erase(gen_itr);
         }
-    } while(validSeq && !isFinished());
 
-    if (lastFailedGen == nullptr || payload.empty()) {
-        throw std::logic_error("Lexer::addTokenGenerator: Unexpected token at line " + std::to_string(m_lineNumber));
+        if (validSeq) {
+            advance(payload);
+        }
+    } while(validSeq && !m_closeToken);
+
+    if (m_commentState->isSkippable() && payload=="/") {
+        commit();
+        return lexToken();
     }
-    return lastFailedGen->generate(payload);
+
+    if (lastAccepted.gen == nullptr) {
+        throw std::logic_error("Lexer::addTokenGenerator: Unexpected token '"+payload+"' at line " + std::to_string(m_lineNumber));
+    }
+    return lastAccepted.gen->generate(payload.substr(0, lastAccepted.len));
 }

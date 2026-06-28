@@ -6,6 +6,8 @@
 
 #include "token.hpp"
 #include "iTokenGenerator.hpp"
+#include "iCommentState.hpp"
+#include "noCommentState.hpp"
 
 class Lexer {
     public:
@@ -15,13 +17,18 @@ class Lexer {
 
     private:
         int m_lineNumber;
+        char m_peek;
+        int m_iteratorLookAhead;
+        bool m_closeToken;
         std::string m_text;
         std::string::iterator m_iterator;
         std::set<std::unique_ptr<ITokenGenerator>> m_tokenGens;
-        char m_peek;
+        const ICommentState* m_commentState;
 
         void skipFiller();
         void advance(std::string&);
+        void advance();
+        void commit();
         bool isFinished();
         [[nodiscard]] std::set<ITokenGenerator*> prepareCandidates() const;
 };

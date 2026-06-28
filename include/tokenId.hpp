@@ -2,5 +2,6 @@
 
 enum TokenId { 
     ADDITION = 1,
-    NUMBER = 256
+    DIVISION = 3,
+    NUMBER = 256,
 };
